@@ -286,7 +286,8 @@ services:
       - CLAMAV_PORT=3310
     volumes:
       - ./data:/app/data
-      - ./conf:/app/conf
+      # Seed settings, read-only. Optional - the runtime store is ./data/settings.properties.
+      - ./conf:/app/conf:ro
       # If you use PATH scan / WATCH you MUST mount your scan roots:
       - /scandir:/scandir:ro
 
@@ -303,7 +304,7 @@ If you mount a **file** onto a **directory** path (or vice versa), Docker errors
 > "Are you trying to mount a directory onto a file (or vice-versa)?"
 
 Good:
-- `./conf:/app/conf`  ✅ (directory → directory)
+- `./conf:/app/conf:ro`  ✅ (directory → directory, read-only seed)
 
 If you want to mount a single file:
 - `./clamd.conf:/etc/clamav/clamd.conf:ro` ✅ (file → file)
@@ -341,6 +342,37 @@ are converted to `TEXT` by `V2__lo_to_text.sql` during that first startup.
 To change the schema, add a new script with the next version, e.g.
 `db/migration/h2/V3__add_something.sql` (and the matching `postgresql/V3__add_something.sql`).
 Never edit a migration that has already been released - Flyway checksums it.
+
+---
+
+## Settings: seed file vs runtime store
+
+Settings are split into two files so that a configuration file from your machine is
+never rewritten by the running container:
+
+- **`data/settings.properties`** - the writable **runtime store**. It lives in the data
+  volume next to the database and is what the *Admin settings* page writes.
+- **`conf/clamav-web-client.properties`** - an optional, **read-only seed**. It is only
+  read at startup, and only for keys the runtime store does not have yet.
+
+Effective precedence for a key is:
+
+```
+environment variable  >  runtime store  >  seed file  >  built-in default
+```
+
+Because the runtime store wins, editing the seed file does **not** override a value you
+already changed in the UI - delete the key from `data/settings.properties` (or the whole
+file) if you want the seed to apply again. Mount the seed directory read-only
+(`./conf:/app/conf:ro`); the app never needs to write there.
+
+Upgrading from an older version needs no manual step: those installations kept their
+settings in `conf/clamav-web-client.properties`, and the first start imports them into
+the new runtime store.
+
+Container environment variables still override everything (`CLAMAV_HOST`,
+`CLAMAV_PORT`, `CLAMAV_UPLOAD_PATH_SCAN_ENABLED`,
+`CLAMAV_UPLOAD_PATH_SCAN_FALLBACK_TO_INSTREAM`).
 
 ---
 

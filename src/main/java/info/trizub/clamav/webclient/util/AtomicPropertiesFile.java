@@ -20,6 +20,22 @@ public class AtomicPropertiesFile {
         return p;
     }
 
+    /**
+     * Loads an existing properties file without creating anything.
+     * Returns {@code null} when the file is absent, so callers can tell
+     * "no seed file configured" apart from "empty seed file".
+     */
+    public static Properties loadIfExists(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return null;
+        }
+        Properties p = new Properties();
+        try (InputStream in = Files.newInputStream(path)) {
+            p.load(in);
+        }
+        return p;
+    }
+
     public static void storeAtomic(Path path, Properties props) throws IOException {
         Files.createDirectories(path.getParent());
         Path tmp = path.resolveSibling(path.getFileName().toString() + ".tmp");

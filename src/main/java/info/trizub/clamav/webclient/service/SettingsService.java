@@ -17,7 +17,19 @@ public class SettingsService {
 
     private static final Logger log = LoggerFactory.getLogger(SettingsService.class);
 
-    public static final String SETTINGS_FILE = "conf/clamav-web-client.properties";
+    /**
+     * Writable runtime store, changed by the admin Settings page. It lives inside the
+     * data volume next to the database so it survives container recreation and is not
+     * a file of the source checkout.
+     */
+    public static final String RUNTIME_SETTINGS_FILE = "data/settings.properties";
+
+    /**
+     * Optional read-only seed file for operators (for example mounted from
+     * {@code ./conf}). Values are only used for keys the runtime store does not have
+     * yet, so editing it never overrides a setting changed through the UI.
+     */
+    public static final String SEED_SETTINGS_FILE = "conf/clamav-web-client.properties";
 
     // Keys
     private static final String ALLOWED_SCAN_ROOTS = "app.allowedScanRoots";
@@ -49,7 +61,12 @@ public class SettingsService {
     @PostConstruct
     public void init() {
         try {
-            props = AtomicPropertiesFile.loadOrCreate(Paths.get(SETTINGS_FILE));
+            props = AtomicPropertiesFile.loadOrCreate(Paths.get(RUNTIME_SETTINGS_FILE));
+
+            // Seed values (if any) fill keys the runtime store does not have yet, then
+            // built-in defaults cover the rest. Precedence is:
+            //   environment variable > runtime store > seed file > built-in default
+            applySeed();
 
             // Persistent defaults.
             props.putIfAbsent(ALLOWED_SCAN_ROOTS, "/scandir");
@@ -66,7 +83,7 @@ public class SettingsService {
 
             /*
              * Container environment variables must override values that may already
-             * exist in conf/clamav-web-client.properties.
+             * exist in the settings store.
              *
              * The old implementation used putIfAbsent(...), which meant that once
              * the properties file contained (for example)
@@ -107,6 +124,35 @@ public class SettingsService {
     }
 
     /**
+     * Copies keys from the optional read-only seed file into the runtime store,
+     * only when the store has no value for them yet.
+     *
+     * This is what keeps an existing installation working after the upgrade: its
+     * settings used to live in conf/clamav-web-client.properties, so the first start
+     * imports them into the new runtime store instead of silently resetting them.
+     */
+    private void applySeed() {
+        try {
+            Properties seed = AtomicPropertiesFile.loadIfExists(Paths.get(SEED_SETTINGS_FILE));
+            if (seed == null) {
+                return;
+            }
+            int imported = 0;
+            for (String key : seed.stringPropertyNames()) {
+                if (props.getProperty(key) == null) {
+                    props.setProperty(key, seed.getProperty(key));
+                    imported++;
+                }
+            }
+            if (imported > 0) {
+                log.info("Imported {} setting(s) from seed file {}", imported, SEED_SETTINGS_FILE);
+            }
+        } catch (IOException e) {
+            log.warn("Could not read seed settings file {}: {}", SEED_SETTINGS_FILE, e.getMessage());
+        }
+    }
+
+    /**
      * Applies container configuration with the following precedence:
      * environment variable -> persisted property -> application default.
      */
@@ -132,7 +178,7 @@ public class SettingsService {
 
     public synchronized void persist() {
         try {
-            AtomicPropertiesFile.storeAtomic(Paths.get(SETTINGS_FILE), props);
+            AtomicPropertiesFile.storeAtomic(Paths.get(RUNTIME_SETTINGS_FILE), props);
         } catch (IOException e) {
             log.error("Failed to persist settings: {}", e.getMessage(), e);
         }

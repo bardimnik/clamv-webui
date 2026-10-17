@@ -15,7 +15,9 @@ services:
       # - SPRING_DATASOURCE_USERNAME=clamavweb
       # - SPRING_DATASOURCE_PASSWORD=changeme
     volumes:
-      - ./conf:/app/conf
+      # Seed settings: optional, read-only. Values are imported only for keys the
+      # runtime store (see ./data/settings.properties) does not have yet.
+      - ./conf:/app/conf:ro
       - ./data:/app/data
     depends_on:
       - clamav-server
