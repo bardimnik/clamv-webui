@@ -70,7 +70,15 @@ Purpose: submit scans.
   - Queue scan
 - Short “Scan jobs” table snippet (recent results)
 
-### 4) Scan jobs
+### 4) Clamdtop
+Purpose: live view of clamd’s internal state.
+- Runs the **native `clamdtop`** TUI inside the web-client container and streams it to the browser over a WebSocket (`/ws/clamdtop`)
+- Select an endpoint (defaults to the default endpoint)
+- Needs the `clamdtop` binary in the image (installed from the `clamav-daemon` package in the `Dockerfile`)
+
+> Clamdtop talks to clamd directly; it does **not** create scan jobs.
+
+### 5) Scan jobs
 Purpose: operations view.
 - Full jobs list with status/verdict/target/endpoint/user
 - Click a job ID for job detail:
@@ -80,7 +88,7 @@ Purpose: operations view.
   - quarantine info (if enabled)
   - error message/log details
 
-### 5) Settings
+### 6) Settings
 Purpose: configuration view.
 - **Quick settings** (read-only summary on the UI)
 - **Admin settings** (editable):
@@ -93,25 +101,25 @@ Purpose: configuration view.
 
 > Some settings may require an app restart to fully apply (e.g., concurrency).
 
-### 6) Endpoints
+### 7) Endpoints
 Admin page: **ClamD endpoints**
 - Create/update/delete endpoints
 - Enable/disable endpoint
-- Configure host/port/platform (e.g., TCP/UNIX)
+- Configure host/port/platform (platform only affects path handling: `UNIX`, `WINDOWS`, `JVM`; the connection is always TCP `host:port`)
 
-### 7) Users
+### 8) Users
 Admin page: **Users**
 - Create users
 - Change passwords
 - Enable/disable users
 
-### 8) Watch
+### 9) Watch
 Admin page: **Watch directories**
 - Add watched directories (must be inside allowed roots)
 - Enable/disable watch entries
 - When enabled globally, watcher queues scan jobs for new/changed files
 
-### 9) Audit
+### 10) Audit
 Admin page: **Audit log**
 - Records admin actions such as:
   - endpoint changes
@@ -201,11 +209,10 @@ curl -v -u 'admin:admin' \
 ```
 
 ### Path scan
-(Exact endpoint path can vary by build; common shape is `/api/scan/path`.)
 ```bash
 curl -v -u 'admin:admin' \
   -H 'Content-Type: application/json' \
-  -d '{"endpointId":33,"absolutePath":"/scandir/somefile"}' \
+  -d '{"endpointId":33,"path":"/scandir/somefile"}' \
   'http://HOST:8080/api/scan/path'
 ```
 
@@ -255,13 +262,12 @@ If you need filenames in server logs, prefer **path scans** (where clamd sees a 
 
 services:
   clamav-server:
-    image: kosztyk/clamv-webui:latest
+    image: clamav/clamav:latest
     container_name: clamav
     restart: unless-stopped
     ports:
       - "3310:3310"
     volumes:
-      - ./conf:/etc/clamav:ro
       - clamav-db:/var/lib/clamav
     environment:
       - TZ=UTC
@@ -274,27 +280,33 @@ services:
       - clamav-server
     ports:
       - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      - ./conf/clamav-web-client.properties:/app/conf/clamav-web-client.properties:rw
-      # If you use PATH scan / WATCH you MUST mount your scan roots:
-      - /scandir:/scandir:ro
     environment:
       - TZ=UTC
+      - CLAMAV_HOST=clamav-server
+      - CLAMAV_PORT=3310
+    volumes:
+      - ./data:/app/data
+      - ./conf:/app/conf
+      # If you use PATH scan / WATCH you MUST mount your scan roots:
+      - /scandir:/scandir:ro
 
 volumes:
   clamav-db: {}
 ```
+
+> The official `clamav/clamav` image already exposes clamd over TCP on `3310`, so no custom
+> `clamd.conf` is required. If you want to customise it, mount a file (not a whole directory):
+> `./clamd.conf:/etc/clamav/clamd.conf:ro`.
 
 ### Common volume mistake (file vs directory)
 If you mount a **file** onto a **directory** path (or vice versa), Docker errors like:
 > "Are you trying to mount a directory onto a file (or vice-versa)?"
 
 Good:
-- `./conf:/etc/clamav:ro`  ✅ (directory → directory)
+- `./conf:/app/conf`  ✅ (directory → directory)
 
 If you want to mount a single file:
-- `./conf/clamd.conf:/etc/clamav/clamd.conf:ro` ✅ (file → file)
+- `./clamd.conf:/etc/clamav/clamd.conf:ro` ✅ (file → file)
 
 ---
 

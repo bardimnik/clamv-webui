@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="no-sidebar clamdtop-console-body">
+<div class="clamdtop-console-shell">
+  <div class="clamdtop-console-topbar">
+    <div class="clamdtop-console-title">
+      <span class="clamdtop-console-title-main" th:text="#{app.title}">ClamAV Web UI</span>
+      <span class="clamdtop-console-title-sub" th:text="#{clamdtop.subtitle}">Native clamdtop monitor</span>
+    </div>
+    <div class="clamdtop-console-nav">
+      <a th:href="@{/dashboard}" href="/dashboard" th:text="#{tab.dashboard}">Dashboard</a>
+      <a th:href="@{/scan}" href="/scan" th:text="#{tab.scan}">Scan</a>
+      <a th:href="@{/jobs}" href="/jobs" th:text="#{tab.jobs}">Scan jobs</a>
+      <form class="d-inline" sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-sm btn-outline-light" th:text="#{topbar.logout}">Logout</button>
+      </form>
+    </div>
+  </div>
+
+  <div th:if="${errorMsg != null}" class="alert alert-danger m-2" th:text="${errorMsg}">Error</div>
+  <div th:replace="~{fragments/native-clamdtop :: nativeClamdtop}"></div>
+</div>
+</body>
+</html>

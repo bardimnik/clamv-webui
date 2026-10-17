@@ -47,6 +47,7 @@ public class WebUiController {
     // This prevents duplicated/stacked sections across tabs.
     private static final String PAGE_DASHBOARD = "pages/dashboard";
     private static final String PAGE_MAIN = "pages/main";
+    private static final String PAGE_CLAMDTOP = "pages/clamdtop";
     private static final String PAGE_SCAN = "pages/scan";
     private static final String PAGE_JOBS = "pages/jobs";
     private static final String PAGE_JOB = "pages/job";
@@ -136,6 +137,15 @@ public class WebUiController {
         return PAGE_MAIN;
     }
 
+
+    @GetMapping("/clamdtop")
+    public String clamdtop(Model model,
+                           @RequestParam(name = "endpointId", required = false) Long endpointId) {
+        model.addAttribute("endpoints", endpoints.all());
+        model.addAttribute("endpointId", endpointId != null ? endpointId
+                : Optional.ofNullable(endpoints.defaultEndpointOrEnsure()).map(ClamdEndpoint::getId).orElse(null));
+        return PAGE_CLAMDTOP;
+    }
 
     @GetMapping("/scan")
     public String scan(Model model,

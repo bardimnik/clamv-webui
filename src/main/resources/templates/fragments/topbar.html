@@ -1,0 +1,29 @@
+<header th:fragment="topbar" class="app-topbar"
+        xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  <div class="app-title">
+    <div class="app-title__name" th:text="#{app.title}">ClamAV Web UI</div>
+    <div class="app-title__subtitle" th:text="#{app.subtitle}">Scan, quarantine, jobs, audit</div>
+  </div>
+
+  <div class="app-topbar__right">
+    <div class="topbar-item" th:replace="~{fragments/language :: language}"></div>
+
+    <div class="topbar-item" sec:authorize="isAuthenticated()">
+      <span class="muted" th:text="#{topbar.user}">User:</span>
+      <span class="me-2" sec:authentication="name">user</span>
+    </div>
+
+    <div class="topbar-item">
+      <span class="muted me-2" th:text="#{topbar.theme}">Theme</span>
+      <label class="switch" th:title="#{topbar.theme.toggle}">
+        <input id="themeToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <form class="d-inline" sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="btn btn-sm btn-outline-light" th:text="#{topbar.logout}">Logout</button>
+    </form>
+  </div>
+</header>

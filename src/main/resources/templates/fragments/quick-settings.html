@@ -1,0 +1,19 @@
+<div th:fragment="quick-settings" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title" th:text="#{settings.quickTitle}">Quick settings</h4>
+            <p class="text-muted mb-2">
+                <span th:text="#{settings.quickHint}">Some settings are stored in</span>
+                <code>conf/clamav-web-client.properties</code>.
+            </p>
+            <ul class="small">
+                <li><strong><span th:text="#{settings.allowedRoots}">Allowed scan roots (comma-separated)</span>:</strong> <span th:text="${settings != null ? settings['app.allowedScanRoots'] : ''}">/scandir</span></li>
+                <li><strong><span th:text="#{settings.uploadMaxBytes}">Upload max bytes</span>:</strong> <span th:text="${settings != null ? settings['app.upload.maxBytes'] : ''}">2147483648</span></li>
+                <li><strong><span th:text="#{settings.concurrentScans}">Concurrent scans</span>:</strong> <span th:text="${settings != null ? settings['app.concurrentScans'] : ''}">2</span> <span th:text="#{settings.restartRequiredParen}">(restart required to apply)</span></li>
+                <li><strong><span th:text="#{settings.quarantineEnabled}">Quarantine enabled</span>:</strong> <span th:text="${settings != null ? settings['app.quarantine.enabled'] : ''}">false</span></li>
+                <li><strong><span th:text="#{settings.webhookEnabled}">Webhook enabled</span>:</strong> <span th:text="${settings != null ? settings['app.webhook.enabled'] : ''}">false</span></li>
+                <li><strong><span th:text="#{settings.watchEnabled}">Watch enabled</span>:</strong> <span th:text="${settings != null ? settings['app.watch.enabled'] : ''}">false</span></li>
+            </ul>
+        </div>
+    </div>
+</div>

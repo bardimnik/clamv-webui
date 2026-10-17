@@ -16,6 +16,13 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
+# clamdtop (used by the /clamdtop UI tab) comes from clamav-daemon; `script` is
+# already provided by the base image (util-linux). --no-install-recommends keeps
+# the image lean; the daemon itself is not started in this container.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends clamav-daemon \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /app/data /app/conf
 
 # Copy jar from build stage

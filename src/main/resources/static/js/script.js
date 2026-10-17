@@ -34,6 +34,23 @@
   document.addEventListener('DOMContentLoaded', () => {
     initThemeToggle();
   });
+
+  // Confirm dialogs for forms marked with data-confirm.
+  // The (localized) message is rendered server-side into data-confirm by the templates.
+  function initConfirmSubmit() {
+    if (window.__confirmSubmitInstalled) return;
+    window.__confirmSubmitInstalled = true;
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (!form || typeof form.getAttribute !== 'function') return;
+      const message = form.getAttribute('data-confirm');
+      if (message && !window.confirm(message)) {
+        event.preventDefault();
+      }
+    }, true);
+  }
+
+  initConfirmSubmit();
 })();
 
 // Legacy helpers (kept for compatibility with existing templates)

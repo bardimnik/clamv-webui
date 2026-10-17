@@ -1,0 +1,14 @@
+# Maven
+target/
+
+# Application runtime data (H2 DB, uploads, quarantine)
+data/
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store

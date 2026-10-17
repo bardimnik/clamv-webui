@@ -1,0 +1,9 @@
+<div th:fragment="footer" class="footer-inline" xmlns:th="http://www.thymeleaf.org">
+  <div class="small muted">
+    <span th:text="#{footer.build}">UI build:</span>
+    <strong>2.3.8-native-clamdtop-original-view</strong>
+    <span class="muted">•</span>
+    <span th:text="#{footer.page}">Page:</span>
+    <span th:text="${currentUri}">/dashboard</span>
+  </div>
+</div>

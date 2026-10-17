@@ -4,10 +4,8 @@ import info.trizub.clamav.webclient.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,13 +31,15 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login", "/error", "/favicon.ico").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/icons/**", "/webfonts/**", "/flags/**").permitAll()
                 .requestMatchers("/h2/**").hasRole("ADMIN")
+                .requestMatchers("/ws/clamdtop").hasAnyRole("VIEWER","OPERATOR","ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/health").hasAnyRole("VIEWER","OPERATOR","ADMIN")
                 .requestMatchers("/api/**").hasAnyRole("OPERATOR","ADMIN")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/jobs/**", "/scan/**").hasAnyRole("OPERATOR","ADMIN")
-                .requestMatchers("/", "/dashboard", "/settings", "/main", "/ping", "/version", "/stats").hasAnyRole("VIEWER","OPERATOR","ADMIN")
+                .requestMatchers("/", "/dashboard", "/settings", "/main", "/clamdtop", "/ping", "/version", "/stats").hasAnyRole("VIEWER","OPERATOR","ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

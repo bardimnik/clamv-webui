@@ -1,0 +1,53 @@
+<div th:fragment="job" xmlns:th="http://www.thymeleaf.org">
+    <h4 th:text="#{job.title}">Job details</h4>
+
+    <div th:if="${job == null}" class="alert alert-warning" th:text="#{job.notFound}">
+        Job not found.
+    </div>
+
+    <div th:if="${job != null}" class="card mb-3">
+        <div class="card-body">
+            <div class="row small">
+                <div class="col-md-4"><strong><span th:text="#{common.id}">Id</span>:</strong> <span th:text="${job.id}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{common.type}">Type</span>:</strong> <span th:text="${job.type}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{common.status}">Status</span>:</strong> <span th:text="${job.status}"></span></div>
+
+                <div class="col-md-4"><strong><span th:text="#{common.verdict}">Verdict</span>:</strong> <span th:text="${job.verdict}"></span></div>
+                <div class="col-md-8"><strong><span th:text="#{common.target}">Target</span>:</strong> <span th:text="${job.target}"></span></div>
+
+                <div class="col-md-4"><strong><span th:text="#{common.endpoint}">Endpoint</span>:</strong> <span th:text="${job.endpoint != null ? job.endpoint.name : ''}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{common.user}">User</span>:</strong> <span th:text="${job.submittedBy}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{common.submitted}">Submitted</span>:</strong> <span th:text="${job.submittedAt}"></span></div>
+
+                <div class="col-md-4"><strong><span th:text="#{job.started}">Started</span>:</strong> <span th:text="${job.startedAt}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{job.finished}">Finished</span>:</strong> <span th:text="${job.finishedAt}"></span></div>
+                <div class="col-md-4"><strong><span th:text="#{job.size}">Size</span>:</strong> <span th:text="${job.sizeBytes}"></span></div>
+
+                <div class="col-12 mt-2" th:if="${job.errorMessage != null}">
+                    <div class="alert alert-danger">
+                        <strong><span th:text="#{common.error}">Error</span>:</strong>
+                        <pre class="small mb-0" th:text="${job.errorMessage}"></pre>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-2" th:if="${job.foundVirusesJson != null}">
+                    <div class="alert alert-warning">
+                        <strong><span th:text="#{job.foundViruses}">Found viruses</span>:</strong>
+                        <pre class="small mb-0" th:text="${job.foundVirusesJson}"></pre>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-2" th:if="${job.quarantinePath != null}">
+                    <div class="alert alert-info">
+                        <strong><span th:text="#{job.quarantine}">Quarantine</span>:</strong> <span th:text="${job.quarantinePath}"></span>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <a th:href="@{/jobs}" href="#" class="btn btn-sm btn-outline-secondary" th:text="#{job.back}">Back</a>
+                    <a th:href="@{/jobs}" href="#" class="btn btn-sm btn-outline-primary" th:text="#{job.refreshList}">Refresh list</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

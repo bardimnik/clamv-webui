@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="no-sidebar">
+<div class="app-shell">
+  <main class="app-main">
+    <div th:replace="~{fragments/topbar :: topbar}"></div>
+
+    <div class="tabs-wrap" th:replace="~{fragments/tabs :: tabs}"></div>
+
+    <section class="app-content">
+      <div th:if="${errorMsg != null}" class="alert alert-danger" th:text="${errorMsg}">Error</div>
+      <div th:replace="~{fragments/job :: job}"></div>
+      <div class="app-footer" th:replace="~{fragments/footer :: footer}"></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

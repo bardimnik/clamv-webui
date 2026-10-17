@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head th:replace="~{fragments/header :: head}"></head>
+
+<body>
+	<ul class="nav nav-pills flex-column mb-auto">
+		<li class="nav-item">
+			<a th:href="@{/}" href="#" class="nav-link" aria-current="page">
+				<svg class="bi me-2" width="16" height="16">
+					<use xlink:href="home"></use>
+				</svg>
+				<span th:text="#{web.error.back}">Back</span>
+			</a>
+		</li>
+	</ul>
+	<div class="container">
+		<h1 th:text="#{web.error.occured}">Error Occurred!</h1>
+		<div class="alert alert-danger" role="alert">
+			<b> [<span th:text="${status}">status</span>] <span th:text="${error}">error</span>
+			</b>
+			<p th:text="${message}">message</p>
+		</div>
+	</div>
+	<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+<div th:fragment="admin-users" data-ui-build="2.3.4" data-page="users" xmlns:th="http://www.thymeleaf.org">
+    <h4 th:text="#{users.title}">Admin: Users</h4>
+    <div class="alert alert-warning small">
+        <span th:text="#{users.defaultCredentials}">Default credentials on first run:</span>
+        <strong>admin / admin</strong>.
+        <span th:text="#{users.changeImmediately}">Change immediately.</span>
+    </div>
+
+    <div class="card mb-3 p-3">
+        <h6 th:text="#{users.create}">Create user</h6>
+        <form method="post" th:action="@{/admin/users/create}" action="/admin/users/create" class="row g-2 align-items-end">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="col-md-3">
+                <label class="form-label" th:text="#{users.username}">Username</label>
+                <input class="form-control" name="username" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" th:text="#{users.password}">Password</label>
+                <input class="form-control" name="password" type="password" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" th:text="#{users.role}">Role</label>
+                <select class="form-select" name="role">
+                    <option value="VIEWER">VIEWER</option>
+                    <option value="OPERATOR">OPERATOR</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" th:text="#{common.enabled}">Enabled</label>
+                <select class="form-select" name="enabled">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" th:text="#{common.create}">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+            <tr>
+                <th th:text="#{common.id}">Id</th>
+                <th th:text="#{users.username}">Username</th>
+                <th th:text="#{users.roles}">Roles</th>
+                <th th:text="#{common.enabled}">Enabled</th>
+                <th th:text="#{users.created}">Created</th>
+                <th th:text="#{users.lastLogin}">Last login</th>
+                <th th:text="#{common.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="u : ${users}">
+                <td th:text="${u.id}"></td>
+                <td th:text="${u.username}"></td>
+                <td th:text="${u.roles}"></td>
+                <td th:text="${u.enabled}"></td>
+                <td th:text="${u.createdAt}"></td>
+                <td th:text="${u.lastLoginAt}"></td>
+                <td>
+                    <form th:action="@{'/admin/users/' + ${u.id} + '/reset'}" method="post" class="d-inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <input name="newPassword" class="form-control form-control-sm d-inline" style="width: 180px;" th:placeholder="#{users.newPassword}" />
+                        <button class="btn btn-sm btn-outline-primary" th:text="#{common.reset}">Reset</button>
+                    </form>
+
+                    <form th:action="@{'/admin/users/' + ${u.id} + '/delete'}" method="post" class="d-inline"
+                          th:attr="data-confirm=#{users.confirmDelete}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

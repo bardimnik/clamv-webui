@@ -1,0 +1,64 @@
+<div th:fragment="admin-watch" data-ui-build="2.3.4" data-page="watch" xmlns:th="http://www.thymeleaf.org">
+    <h4 th:text="#{watch.title}">Admin: Watch directories</h4>
+    <p class="text-muted small" th:text="#{watch.subtitle}">
+        Watcher runs inside the web app and queues scan jobs for new/changed files.
+        Ensure watched paths are under allowed scan roots.
+    </p>
+
+    <div class="card mb-3 p-3">
+        <h6 th:text="#{watch.create}">Create watch directory</h6>
+        <form method="post" th:action="@{/admin/watch/create}" action="/admin/watch/create" class="row g-2 align-items-end">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="col-md-6">
+                <label class="form-label" th:text="#{watch.path}">Path</label>
+                <input class="form-control" name="path" placeholder="/scandir/incoming" required />
+                <div class="form-text" th:text="#{watch.allowedRoots}">Allowed roots:</div>
+                <ul class="small">
+                    <li th:each="r : ${allowedRoots}" th:text="${r}"></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" th:text="#{common.endpoint}">Endpoint</label>
+                <select class="form-select" name="endpointId">
+                    <option th:each="ep : ${endpoints}" th:value="${ep.id}" th:text="${ep.name}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" th:text="#{common.create}">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+            <tr>
+                <th th:text="#{common.id}">Id</th>
+                <th th:text="#{watch.path}">Path</th>
+                <th th:text="#{common.endpoint}">Endpoint</th>
+                <th th:text="#{common.enabled}">Enabled</th>
+                <th th:text="#{common.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="w : ${watchDirs}">
+                <td th:text="${w.id}"></td>
+                <td th:text="${w.path}"></td>
+                <td th:text="${w.endpoint != null ? w.endpoint.name : ''}"></td>
+                <td th:text="${w.enabled}"></td>
+                <td>
+                    <form th:action="@{'/admin/watch/' + ${w.id} + '/toggle'}" method="post" class="d-inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button class="btn btn-sm btn-outline-primary" th:text="${w.enabled} ? #{watch.disable} : #{watch.enable}"></button>
+                    </form>
+                    <form th:action="@{'/admin/watch/' + ${w.id} + '/delete'}" method="post" class="d-inline"
+                          th:attr="data-confirm=#{watch.confirmDelete}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

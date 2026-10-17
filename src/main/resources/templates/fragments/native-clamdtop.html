@@ -1,0 +1,33 @@
+<div th:fragment="nativeClamdtop" class="native-clamdtop-page native-clamdtop-original-view" data-ui-build="2.3.8" data-page="native-clamdtop" xmlns:th="http://www.thymeleaf.org">
+  <div class="native-clamdtop-compactbar">
+    <div class="native-clamdtop-control native-clamdtop-control-endpoint">
+      <label class="native-clamdtop-label" for="nativeClamdtopEndpoint" th:text="#{clamdtop.endpoint}">Endpoint</label>
+      <select class="form-select form-select-sm" id="nativeClamdtopEndpoint">
+        <option th:each="ep : ${endpoints}"
+                th:value="${ep.id}"
+                th:selected="${endpointId != null and ep.id == endpointId}"
+                th:text="${ep.name + ' (' + ep.host + ':' + ep.port + ' / ' + ep.platform + ')'}">default (clamav-server:3310 / UNIX)</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-sm btn-primary" id="nativeClamdtopConnect" th:text="#{common.connect}">Connect</button>
+    <button type="button" class="btn btn-sm btn-outline-light" id="nativeClamdtopDisconnect" th:text="#{common.disconnect}">Disconnect</button>
+    <div class="native-clamdtop-status" id="nativeClamdtopStatus" th:text="#{clamdtop.status.disconnected}">Disconnected</div>
+    <div class="native-clamdtop-hint" th:text="#{clamdtop.hint}">Native keys: <kbd>q</kbd> quit, <kbd>r</kbd> reset max, arrows navigate. Queue rows are live only while clamd is scanning. Uploads use named path scans when the upload volume is shared with clamd.</div>
+  </div>
+
+  <div class="native-terminal-wrap">
+    <div id="nativeClamdtopTerminal" class="native-terminal" tabindex="0" role="application" th:attr="aria-label=#{clamdtop.terminal}"></div>
+  </div>
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.__clamdtopI18n = {
+      disconnected: /*[[#{clamdtop.status.disconnected}]]*/ 'Disconnected',
+      connecting:   /*[[#{clamdtop.status.connecting}]]*/ 'Connecting',
+      connected:    /*[[#{clamdtop.status.connected}]]*/ 'Connected',
+      error:        /*[[#{clamdtop.status.error}]]*/ 'WebSocket error',
+      noEndpoint:   /*[[#{clamdtop.status.noEndpoint}]]*/ 'No endpoint'
+    };
+    /*]]>*/
+  </script>
+</div>

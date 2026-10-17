@@ -1,0 +1,93 @@
+<div th:fragment="admin-endpoints" data-ui-build="2.3.4" data-page="endpoints" xmlns:th="http://www.thymeleaf.org">
+    <h4 th:text="#{endpoints.title}">Admin: ClamD endpoints</h4>
+
+    <div class="card mb-3 p-3">
+        <h6 th:text="#{endpoints.create}">Create endpoint</h6>
+        <form method="post" th:action="@{/admin/endpoints/create}" action="/admin/endpoints/create" class="row g-2 align-items-end">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="col-md-2">
+                <label class="form-label" th:text="#{common.name}">Name</label>
+                <input class="form-control" name="name" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" th:text="#{common.host}">Host</label>
+                <input class="form-control" name="host" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" th:text="#{common.port}">Port</label>
+                <input class="form-control" name="port" value="3310" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" th:text="#{common.platform}">Platform</label>
+                <select class="form-select" name="platform">
+                    <option value="UNIX">UNIX</option>
+                    <option value="WINDOWS">WINDOWS</option>
+                    <option value="JVM_PLATFORM">JVM_PLATFORM</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label" th:text="#{common.enabled}">Enabled</label>
+                <select class="form-select" name="enabled">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" th:text="#{common.create}">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th th:text="#{common.id}">Id</th>
+                    <th th:text="#{common.name}">Name</th>
+                    <th th:text="#{common.host}">Host</th>
+                    <th th:text="#{common.port}">Port</th>
+                    <th th:text="#{common.platform}">Platform</th>
+                    <th th:text="#{common.enabled}">Enabled</th>
+                    <th th:text="#{common.actions}">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ep : ${endpoints}">
+                    <td th:text="${ep.id}">1</td>
+                    <td>
+                        <form th:action="@{'/admin/endpoints/' + ${ep.id} + '/update'}" method="post" class="row g-1">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <div class="col"><input class="form-control form-control-sm" name="name" th:value="${ep.name}" /></div>
+                            <div class="col"><input class="form-control form-control-sm" name="host" th:value="${ep.host}" /></div>
+                            <div class="col"><input class="form-control form-control-sm" name="port" th:value="${ep.port}" /></div>
+                            <div class="col">
+                                <select class="form-select form-select-sm" name="platform">
+                                    <option value="UNIX" th:selected="${ep.platform.name() == 'UNIX'}">UNIX</option>
+                                    <option value="WINDOWS" th:selected="${ep.platform.name() == 'WINDOWS'}">WINDOWS</option>
+                                    <option value="JVM_PLATFORM" th:selected="${ep.platform.name() == 'JVM_PLATFORM'}">JVM_PLATFORM</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select class="form-select form-select-sm" name="enabled">
+                                    <option value="true" th:selected="${ep.enabled}">true</option>
+                                    <option value="false" th:selected="${ep.enabled == false}">false</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-outline-primary" th:text="#{common.save}">Save</button>
+                            </div>
+                        </form>
+                    </td>
+                    <td></td><td></td><td></td><td></td>
+                    <td>
+                        <form th:action="@{'/admin/endpoints/' + ${ep.id} + '/delete'}" method="post"
+                              th:attr="data-confirm=#{endpoints.confirmDelete}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
