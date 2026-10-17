@@ -1,8 +1,8 @@
 package info.trizub.clamav.webclient.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import info.trizub.clamav.webclient.model.*;
 import info.trizub.clamav.webclient.repo.ScanJobRepository;
+import info.trizub.clamav.webclient.util.HashUtils;
 import info.trizub.clamav.webclient.util.PathPolicy;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -18,6 +18,11 @@ import java.nio.file.*;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Creates and queries scan jobs (uploads, path scans, watched files) and hands them
+ * over to {@link ScanExecutionService}. Job state transitions live in
+ * {@link ScanJobStateService}.
+ */
 @Service
 public class ScanJobService {
 
@@ -25,13 +30,11 @@ public class ScanJobService {
 
     private final ScanJobRepository repo;
     private final SettingsService settings;
-    private final ObjectMapper mapper;
     private final ScanExecutionService executor;
 
-    public ScanJobService(ScanJobRepository repo, SettingsService settings, ObjectMapper mapper, ScanExecutionService executor) {
+    public ScanJobService(ScanJobRepository repo, SettingsService settings, ScanExecutionService executor) {
         this.repo = repo;
         this.settings = settings;
-        this.mapper = mapper;
         this.executor = executor;
     }
 
@@ -69,11 +72,12 @@ public class ScanJobService {
             if (f.getSize() > settings.uploadMaxBytes()) {
                 throw new IllegalArgumentException("File too large: " + f.getOriginalFilename());
             }
-            String id = UUID.randomUUID().toString().replace("-", "");
-            Path uploadDir = settings.uploadDir();
             try {
+                Path uploadDir = settings.uploadDir();
                 Files.createDirectories(uploadDir);
-                String safeName = (f.getOriginalFilename() == null ? "upload" : f.getOriginalFilename()).replaceAll("[^a-zA-Z0-9._-]", "_");
+                String safeName = (f.getOriginalFilename() == null ? "upload" : f.getOriginalFilename())
+                        .replaceAll("[^a-zA-Z0-9._-]", "_");
+                String id = newJobId();
                 Path stored = uploadDir.resolve(id + "-" + safeName);
 
                 // Save file
@@ -84,24 +88,19 @@ public class ScanJobService {
                 // Hash
                 String sha;
                 try (InputStream in2 = Files.newInputStream(stored)) {
-                    sha = info.trizub.clamav.webclient.util.HashUtils.sha256(in2);
+                    sha = HashUtils.sha256(in2);
                 }
 
                 ScanJob job = new ScanJob();
                 job.setId(id);
                 job.setType(ScanJobType.UPLOAD);
-                job.setStatus(ScanJobStatus.QUEUED);
                 job.setTarget(safeName);
                 job.setStoredPath(stored.toString());
                 job.setSha256(sha);
                 job.setSizeBytes(f.getSize());
                 job.setEndpoint(endpoint);
-                job.setSubmittedBy(username);
-                job.setSubmittedAt(Instant.now());
-                repo.save(job);
-                jobs.add(job);
-                enqueueAfterCommit(job.getId());
-                } catch (Exception e) {
+                jobs.add(startScan(job, username));
+            } catch (Exception e) {
                 log.error("Failed to create upload job: {}", e.getMessage());
             }
         }
@@ -116,95 +115,50 @@ public class ScanJobService {
             throw new IllegalArgumentException("Path is not allowed by policy. Allowed roots: " + settings.allowedRoots());
         }
 
-        String id = UUID.randomUUID().toString().replace("-", "");
         ScanJob job = new ScanJob();
-        job.setId(id);
         job.setType(ScanJobType.PATH);
-        job.setStatus(ScanJobStatus.QUEUED);
         job.setTarget(requested.toString());
         job.setEndpoint(endpoint);
-        job.setSubmittedBy(username);
-        job.setSubmittedAt(Instant.now());
-        repo.save(job);
-        enqueueAfterCommit(job.getId());
-                return job;
+        return startScan(job, username);
     }
 
     @Transactional
     public ScanJob createWatchFileJob(Path file, ClamdEndpoint endpoint, String username) {
-        String id = UUID.randomUUID().toString().replace("-", "");
         ScanJob job = new ScanJob();
-        job.setId(id);
         job.setType(ScanJobType.WATCH);
-        job.setStatus(ScanJobStatus.QUEUED);
         job.setTarget(file.toAbsolutePath().normalize().toString());
         job.setEndpoint(endpoint);
-        job.setSubmittedBy(username != null ? username : "watcher");
+        return startScan(job, username != null ? username : "watcher");
+    }
+
+    /**
+     * Single point where a new scan job is persisted and scheduled for execution.
+     * Callers only pre-fill the type, target, endpoint and any type-specific fields.
+     */
+    private ScanJob startScan(ScanJob job, String submittedBy) {
+        job.setId(newJobId());
+        job.setStatus(ScanJobStatus.QUEUED);
+        job.setSubmittedBy(submittedBy);
         job.setSubmittedAt(Instant.now());
         repo.save(job);
         enqueueAfterCommit(job.getId());
-                return job;
+        return job;
     }
 
-    
-private void enqueueAfterCommit(String jobId) {
-    if (TransactionSynchronizationManager.isActualTransactionActive()) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                executor.enqueue(jobId);
-            }
-        });
-    } else {
-        executor.enqueue(jobId);
-    }
-}
-
-@Transactional
-    public void finishOk(String id) {
-        ScanJob job = repo.findById(id).orElseThrow();
-        job.setStatus(ScanJobStatus.FINISHED);
-        job.setVerdict(ScanVerdict.OK);
-        job.setFinishedAt(Instant.now());
-        repo.save(job);
+    private static String newJobId() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
-    @Transactional
-    public void finishFound(String id, Object foundViruses) {
-        ScanJob job = repo.findById(id).orElseThrow();
-        job.setStatus(ScanJobStatus.FINISHED);
-        job.setVerdict(ScanVerdict.VIRUS_FOUND);
-        try {
-            job.setFoundVirusesJson(mapper.writeValueAsString(foundViruses));
-        } catch (Exception e) {
-            job.setFoundVirusesJson(String.valueOf(foundViruses));
+    private void enqueueAfterCommit(String jobId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    executor.enqueue(jobId);
+                }
+            });
+        } else {
+            executor.enqueue(jobId);
         }
-        job.setFinishedAt(Instant.now());
-        repo.save(job);
-    }
-
-    @Transactional
-    public void finishError(String id, String message) {
-        ScanJob job = repo.findById(id).orElseThrow();
-        job.setStatus(ScanJobStatus.FINISHED);
-        job.setVerdict(ScanVerdict.ERROR);
-        job.setErrorMessage(message);
-        job.setFinishedAt(Instant.now());
-        repo.save(job);
-    }
-
-    @Transactional
-    public void markRunning(String id) {
-        ScanJob job = repo.findById(id).orElseThrow();
-        job.setStatus(ScanJobStatus.RUNNING);
-        job.setStartedAt(Instant.now());
-        repo.save(job);
-    }
-
-    @Transactional
-    public void setQuarantinePath(String id, String quarantinePath) {
-        ScanJob job = repo.findById(id).orElseThrow();
-        job.setQuarantinePath(quarantinePath);
-        repo.save(job);
     }
 }

@@ -100,6 +100,16 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Database schema migrations (replaces Hibernate ddl-auto=update) -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
 		<!-- Validation -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

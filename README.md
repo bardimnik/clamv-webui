@@ -310,6 +310,40 @@ If you want to mount a single file:
 
 ---
 
+## Database & schema migrations
+
+By default the app uses an embedded H2 file database at `./data/clamav-web-client.mv.db`
+(that is what the `./data:/app/data` volume keeps). PostgreSQL is supported as well - just
+point the datasource at it:
+
+```yaml
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/clamavweb
+      - SPRING_DATASOURCE_USERNAME=clamavweb
+      - SPRING_DATASOURCE_PASSWORD=changeme
+```
+
+The schema is **owned by Flyway**, not by Hibernate:
+
+- migration scripts live in `src/main/resources/db/migration/h2/` and
+  `src/main/resources/db/migration/postgresql/` (Flyway picks the matching folder via
+  `spring.flyway.locations=classpath:db/migration/{vendor}`);
+- Spring Boot runs the migrations before the app starts, and Hibernate only *validates*
+  that the entities match the migrated schema (`spring.jpa.hibernate.ddl-auto=validate`);
+- the applied migrations are recorded in the `flyway_schema_history` table.
+
+Databases created by older versions of the app (when Hibernate still used
+`ddl-auto=update`) are **baselined automatically** at version 1 (`spring.flyway.baseline-on-migrate`),
+so an existing installation keeps its data instead of being recreated. PostgreSQL databases
+whose `scan_jobs.found_viruses_json` / `error_message` columns are still OID large objects
+are converted to `TEXT` by `V2__lo_to_text.sql` during that first startup.
+
+To change the schema, add a new script with the next version, e.g.
+`db/migration/h2/V3__add_something.sql` (and the matching `postgresql/V3__add_something.sql`).
+Never edit a migration that has already been released - Flyway checksums it.
+
+---
+
 ## Troubleshooting quick hits
 
 ### Jobs stuck in QUEUED
